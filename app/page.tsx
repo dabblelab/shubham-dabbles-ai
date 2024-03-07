@@ -45,7 +45,7 @@ export default function Home() {
   );
   return (
     <ChatWindow
-      endpoint="api/archr-assistant"
+      endpoint="api/test"
       emoji=""
       titleText="Archr Assistant"
       placeholder="Please enter your message here"
