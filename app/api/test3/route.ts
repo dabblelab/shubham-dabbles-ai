@@ -1,4 +1,4 @@
-import { Message as VercelChatMessage } from "ai";
+import { StreamingTextResponse, Message as VercelChatMessage } from "ai";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -12,7 +12,12 @@ import { ChatOpenAI } from "@langchain/openai";
 import { AgentExecutor } from "langchain/agents";
 import { z } from "zod";
 
-import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
+import {
+  AIMessage,
+  BaseMessage,
+  HumanMessage,
+  ChatMessage,
+} from "@langchain/core/messages";
 import { formatToOpenAIFunctionMessages } from "langchain/agents/format_scratchpad";
 import { OpenAIFunctionsAgentOutputParser } from "langchain/agents/openai/output_parser";
 
@@ -196,6 +201,16 @@ const formatMessage = (message: VercelChatMessage) => {
   }
 };
 
+const convertVercelMessageToLangChainMessage = (message: VercelChatMessage) => {
+  if (message.role === "user") {
+    return new HumanMessage(message.content);
+  } else if (message.role === "assistant") {
+    return new AIMessage(message.content);
+  } else {
+    return new ChatMessage(message.content, message.role);
+  }
+};
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -204,6 +219,11 @@ export async function POST(req: NextRequest) {
 
     const chatHistory: BaseMessage[] = formattedPreviousMessages;
     console.log(chatHistory);
+
+    const returnIntermediateSteps = body.show_intermediate_steps;
+    const previousMessages = messages
+      .slice(0, -1)
+      .map(convertVercelMessageToLangChainMessage);
 
     const currentMessageContent = messages[messages.length - 1].content;
     console.log(currentMessageContent);
@@ -278,23 +298,46 @@ export async function POST(req: NextRequest) {
     const executorWithMemory = AgentExecutor.fromAgentAndTools({
       agent: agentWithMemory,
       tools: tools,
+      returnIntermediateSteps,
     });
 
-    const result = await executorWithMemory.invoke({
-      input: currentMessageContent,
-      chat_history: chatHistory,
-    });
+    if (!returnIntermediateSteps) {
+      const logStream = await executorWithMemory.streamLog({
+        input: currentMessageContent,
+        chat_history: previousMessages,
+      });
 
-    console.log(result);
+      const textEncoder = new TextEncoder();
+      const transformStream = new ReadableStream({
+        async start(controller) {
+          for await (const chunk of logStream) {
+            if (chunk.ops?.length > 0 && chunk.ops[0].op === "add") {
+              const addOp = chunk.ops[0];
+              if (
+                addOp.path.startsWith("/logs/ChatOpenAI") &&
+                typeof addOp.value === "string" &&
+                addOp.value.length
+              ) {
+                controller.enqueue(textEncoder.encode(addOp.value));
+              }
+            }
+          }
+          controller.close();
+        },
+      });
 
-    const responsetext = result.output;
+      return new StreamingTextResponse(transformStream);
+    } else {
+      const result = await executorWithMemory.invoke({
+        input: currentMessageContent,
+        chat_history: chatHistory,
+      });
 
-    // send the text response back
-    return NextResponse.json({ message: responsetext });
-
-    // const outputParser = new HttpResponseOutputParser();
-
-    // return new StreamingTextResponse(stream);
+      return NextResponse.json(
+        { output: result.output, intermediate_steps: result.intermediateSteps },
+        { status: 200 },
+      );
+    }
   } catch (e: any) {
     console.log(e.message);
     return NextResponse.json({ error: e.message }, { status: e.status ?? 500 });
