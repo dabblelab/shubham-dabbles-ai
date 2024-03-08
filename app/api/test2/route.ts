@@ -114,6 +114,80 @@ const generateScopeOfWorkDocumentZodSchema = z.object({
     ),
 });
 
+function validateSOWDocumentJSON(sowDocumentJSON: any): boolean {
+  const requiredFields = [
+    "project_name",
+    "project_vision",
+    "milestones",
+    // 'other_considerations',
+    // 'project_timelines',
+    // 'budget_estimates'
+  ];
+
+  for (const field of requiredFields) {
+    if (!sowDocumentJSON || !sowDocumentJSON[field]) {
+      return false;
+    }
+  }
+
+  if (!sowDocumentJSON.milestones) {
+    return false;
+  }
+
+  if (!Array.isArray(sowDocumentJSON.milestones)) {
+    return false;
+  }
+
+  if (sowDocumentJSON.milestones.length === 0) {
+    return false;
+  }
+
+  for (const milestone of sowDocumentJSON.milestones) {
+    if (!milestone.objectives || !milestone.objectives.length) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function jsonToMarkdown(json: any): string {
+  function formatKey(key: string): string {
+    return key
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
+  function formatObject(obj: any, indent: string = ""): string {
+    let mdStr: string = "";
+    if (typeof obj === "object" && obj !== null) {
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          const formattedKey = formatKey(key);
+          const value = obj[key];
+          mdStr += `${indent}- **${formattedKey}**: `;
+          if (typeof value === "object" && value !== null) {
+            mdStr += "\n" + formatObject(value, indent + "  ");
+          } else {
+            mdStr += `${value}\n`;
+          }
+        }
+      }
+    } else {
+      mdStr += `${indent}${obj}\n`;
+    }
+    return mdStr;
+  }
+
+  try {
+    const data: any = json;
+    return formatObject(data);
+  } catch (e) {
+    return "Invalid JSON";
+  }
+}
+
 const formatMessage = (message: VercelChatMessage) => {
   if (message.role === "assistant") {
     return new AIMessage(message.content);
@@ -162,7 +236,17 @@ export async function POST(req: NextRequest) {
           budget_estimates: string;
         }) => {
           console.log(input);
-          return `# Project Name: ${input.project_name}`;
+
+          const documentJSON = input;
+          console.log(documentJSON);
+
+          const isDocJSONValid = validateSOWDocumentJSON(documentJSON);
+
+          if (!isDocJSONValid)
+            return "The argument to the function generate_scope_of_work_document does not match the schema. Please try again.";
+
+          const documentInMD = jsonToMarkdown(documentJSON);
+          return documentInMD;
         },
       }),
     ];

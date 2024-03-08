@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./markdown.css";
 import { Public_Sans } from "next/font/google";
 
 import { Navbar } from "@/components/Navbar";
