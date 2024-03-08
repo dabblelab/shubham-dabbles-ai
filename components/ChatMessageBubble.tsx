@@ -1,4 +1,6 @@
 import type { Message } from "ai/react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export function ChatMessageBubble(props: {
   message: Message;
@@ -7,18 +9,34 @@ export function ChatMessageBubble(props: {
 }) {
   const colorClassName =
     props.message.role === "user"
-      ? "bg-violet-600 text-white"
-      : "bg-slate-200 text-black";
+      ? "border-2 border-violet-600 text-white"
+      : "border-2 border-slate-200 text-black";
   const alignmentClassName =
     props.message.role === "user" ? "ml-auto" : "mr-auto";
-  const prefix = props.message.role === "user" ? "🧑" : props.aiEmoji;
+  const prefix = props.message.role === "user" ? "🧑" : props.aiEmoji || "🤖";
+
+  const content =
+    props.message.role === "user"
+      ? props.message.content
+      : JSON.parse(props.message.content).message;
   return (
     <div
-      className={`${alignmentClassName} ${colorClassName} rounded px-4 py-2 max-w-[80%] mb-8 flex`}
+      className={`${alignmentClassName} ${colorClassName} rounded px-4 py-2 max-w-[80%] mb-8 flex bg-white`}
     >
-      <div className="mr-2">{prefix}</div>
+      <div className="m-2 ml-0">{prefix}</div>
       <div className="whitespace-pre-wrap flex flex-col">
-        <span>{props.message.content}</span>
+        <ReactMarkdown
+          className="break-words bg-transparent w-full p-2 markdown-body "
+          remarkPlugins={[remarkGfm]}
+          components={{
+            a: (props) => (
+              <a {...props} target="_blank" rel="noopener noreferrer" />
+            ),
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+        {/* <span>{props.message.content}</span> */}
         {props.sources && props.sources.length ? (
           <>
             <code className="mt-4 mr-auto bg-slate-600 px-2 py-1 rounded">
