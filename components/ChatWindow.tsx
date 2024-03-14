@@ -132,8 +132,6 @@ export function ChatWindow(props: {
         const newMessages = messagesWithUserReply;
         for (const message of intermediateStepMessages) {
           newMessages.push(message);
-          console.log("newMessages", newMessages);
-          console.log("message", message);
           setMessages([...newMessages]);
           await new Promise((resolve) =>
             setTimeout(resolve, 1000 + Math.random() * 1000),

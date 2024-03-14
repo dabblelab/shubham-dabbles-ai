@@ -15,9 +15,7 @@ export function ChatMessageBubble(props: {
     props.message.role === "user" ? "ml-auto" : "mr-auto";
   const prefix = props.message.role === "user" ? "🧑" : props.aiEmoji || "🤖";
 
-  console.log(props.message);
-
-  const content = props.message.content;
+  const content = String(props.message.content);
 
   return (
     <div

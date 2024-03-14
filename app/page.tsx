@@ -45,9 +45,9 @@ export default function Home() {
   );
   return (
     <ChatWindow
-      endpoint="api/test3"
+      endpoint="api/master-assistant"
       emoji=""
-      titleText="Archr Assistant test 3"
+      titleText="Master Assistant"
       placeholder="Please enter your message here"
       emptyStateComponent={InfoCard}
       showIntermediateStepsToggle={true}
