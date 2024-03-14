@@ -43,7 +43,8 @@ export default async function Home({
       endpoint={`/api/dynamic-assistant/v1?assistant_id=${assistant_id}`}
       assistantId={assistant_id}
       emoji=""
-      titleText="Dynamic Assistant"
+      titleText={assistant?.name || "Dynamic Assistant"}
+      assistantDescription={assistant?.description || "Dynamic description 🚀"}
       placeholder="Please enter your message here"
       emptyStateComponent={InfoCard}
       showIntermediateStepsToggle={false}

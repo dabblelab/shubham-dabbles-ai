@@ -18,6 +18,7 @@ export function DynamicAssistantChatWindow(props: {
   emptyStateComponent: ReactElement;
   placeholder?: string;
   titleText?: string;
+  assistantDescription?: string;
   emoji?: string;
   showIngestForm?: boolean;
   showIntermediateStepsToggle?: boolean;
@@ -30,6 +31,7 @@ export function DynamicAssistantChatWindow(props: {
     emptyStateComponent,
     placeholder,
     titleText = "An LLM",
+    assistantDescription,
     showIngestForm,
     showIntermediateStepsToggle,
     emoji,
@@ -167,9 +169,16 @@ export function DynamicAssistantChatWindow(props: {
         messages.length > 0 ? "border" : ""
       }`}
     >
-      <h2 className={`${messages.length > 0 ? "" : "hidden"} text-2xl`}>
-        {emoji} {titleText}
-      </h2>
+      <div
+        className={`text-center bg-violet-200 w-full  rounded-md p-2 ${
+          messages.length > 0 ? "" : "hidden"
+        }`}
+      >
+        <h2 className={`text-2xl`}>
+          {emoji} {titleText}
+        </h2>
+        <p>{assistantDescription}</p>
+      </div>
       {messages.length === 0 ? emptyStateComponent : ""}
       <div
         className="flex flex-col-reverse w-full mb-4 overflow-auto transition-[flex-grow] ease-in-out"

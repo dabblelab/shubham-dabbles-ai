@@ -20,8 +20,9 @@ import {
 } from "@langchain/core/messages";
 import { formatToOpenAIFunctionMessages } from "langchain/agents/format_scratchpad";
 import { OpenAIFunctionsAgentOutputParser } from "langchain/agents/openai/output_parser";
+import prisma from "@/lib/db";
 
-export const runtime = "edge";
+// export const runtime = "edge";
 
 const SYSTEM_PROMPT = `You are a helpful master assistant that allows users to create another AI assistant. You do this by generating appropriate system prompt for it. You will ask all the necessary questions from the user like name, description, etc. and at the end generate a system prompt based on the behaviours or features described by the user. You will confirm with the user about the list of features or assistant's behaviour and call the generate_system_prompt function provided to you at the end. You don't let the user knwo that you are creating a prompt rather just tell the you help them create AI assistants.`;
 
@@ -134,25 +135,41 @@ export async function POST(req: NextRequest) {
       new DynamicStructuredTool({
         name: "generate_system_prompt",
         description:
-          "Generates a system prompt for the assistant based on the features and behaviour described by the user.",
+          "Generates a system prompt for the assistant based on the features and behaviour described by the user. At the end return the live assistant URL.",
         schema: generateSystemPrompt,
         func: async (input: {
           assistant_name: string;
           assistant_description: string;
           system_prompt: string;
         }) => {
-          console.log(input);
+          try {
+            console.log(input);
 
-          const systemPromptJson = input;
-          console.log(systemPromptJson);
+            const systemPromptJson = input;
+            console.log(systemPromptJson);
 
-          const isJsonValid = validateSystemPromptJSON(systemPromptJson);
+            const isJsonValid = validateSystemPromptJSON(systemPromptJson);
 
-          if (!isJsonValid)
-            return "The argument to the function generate_system_prompt does not match the schema. Please try again.";
+            if (!isJsonValid)
+              return "The argument to the function generate_system_prompt does not match the schema. Please try again.";
 
-          const documentInMD = jsonToMarkdown(systemPromptJson);
-          return documentInMD;
+            const assistant = await prisma.assistant.create({
+              data: {
+                name: input.assistant_name,
+                description: input.assistant_description,
+                system_prompt: input.system_prompt,
+              },
+            });
+
+            if (!assistant) throw new Error("Failed to create assistant");
+
+            return `Assistant created successfully! Please aceess the assistant here: http://localhost:3000/assistants/${assistant.id}`;
+          } catch (e) {
+            console.log((e as Error).message);
+            return `Could not create assistant due to error: ${
+              (e as Error).message
+            }`;
+          }
         },
       }),
     ];
