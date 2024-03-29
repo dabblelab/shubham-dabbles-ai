@@ -10,12 +10,13 @@ export async function uploadFileToSupabase({
   fileName: string;
   fileBuffer: Buffer;
 }): Promise<any> {
-  const file = new Blob([fileBuffer]);
+  // const file = new Blob([fileBuffer]);
   const { data, error } = await supabase.storage
     .from(BUCKET_NAME)
-    .upload(`${FOLDER_NAME}/${fileName}`, file, {
+    .upload(`${FOLDER_NAME}/${fileName}`, fileBuffer, {
       cacheControl: "3600",
-      upsert: false,
+      upsert: true,
+      contentType: "audio/mpeg",
     });
 
   if (error) {
