@@ -11,9 +11,9 @@ export default function Home() {
   );
   return (
     <ChatWindow
-      endpoint="api/chat-summarizer/v1"
+      endpoint="api/chat-summarizer/v2"
       emoji=""
-      titleText="Chat summarizer"
+      titleText="Chat summarizer v2"
       placeholder="Please enter your message here"
       emptyStateComponent={InfoCard}
       showIntermediateStepsToggle={false}
