@@ -24,7 +24,7 @@ import { OpenAIFunctionsAgentOutputParser } from "langchain/agents/openai/output
 
 // export const runtime = "edge";
 
-const SYSTEM_PROMPT = `You're an assistant dedicated to helping users get a summary of a chat conversation. The user will enter a list of chats between two or more users. Your task is to return a summary using the provided function "generate_ssummary" such that a user can understand quickly what happened in the chat. The summary should be concise and capture the essence of the conversation.Use generate_ssummary function to generate the summary. `;
+const SYSTEM_PROMPT = `You're an assistant dedicated to helping users get a summary of a chat conversation. The user will enter a list of chats between two or more users. Your task is to return a summary using the provided function "generate_ssummary" such that a user can understand quickly what happened in the chat. The summary should be concise and capture the essence of the conversation.Use generate_ssummary function to generate the summary. THE FINAL SUMMARY MUST NEVER EXCEED 4000 CHARACTERS.`;
 // const SYSTEM_PROMPT = `You're an assistant dedicated to helping users get a summary of a chat conversation. The user will enter a list of chats between two or more users. Your task is to return a summary using the provided function "generate_ssummary" such that a user can understand quickly what happened in the chat. The summary should be concise and capture the essence of the conversation. In addition to the summary, at the end, you should also include a list with title TLDR; consisting of important takeaways as bullet points. Use generate_ssummary function to generate the summary. `;
 
 const generateSummary = z.object({
@@ -93,11 +93,7 @@ export async function POST(req: NextRequest) {
         schema: generateSummary,
         func: async (input: { summary: string }) => {
           try {
-            console.log(input);
-
             const summaryJson = input;
-            console.log(summaryJson);
-
             const isJsonValid = validateSummaryJSON(summaryJson);
 
             if (!isJsonValid)
